@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['flower']
+
+roboflow:
+  workspace: lalamu-lage
+  project: lalamu-lage
+  version: dataset
+  license: Private
+  url: https://app.roboflow.com/lalamu-lage/lalamu-lage/dataset
