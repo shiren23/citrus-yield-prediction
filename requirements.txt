@@ -1,0 +1,12 @@
+ultralytics>=8.0
+gradio>=4.0
+torch>=2.0
+torchvision
+opencv-python
+matplotlib
+plotly
+pandas
+numpy
+Pillow
+scikit-learn
+tqdm
