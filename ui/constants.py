@@ -6,10 +6,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.config import DATA_DIR
 
-STAGE_UI_OPTIONS = ["花期（早期估产）", "成熟期（产量校正）"]
+# 暂时隐藏成熟期入口，仅开放花期预测
+STAGE_UI_OPTIONS = ["花期（早期估产）"]
 STAGE_UI_MAP = {
     "花期（早期估产）": "flowering",
-    "成熟期（产量校正）": "mature",
 }
 STAGE_DISPLAY = {
     "flowering": "花期",

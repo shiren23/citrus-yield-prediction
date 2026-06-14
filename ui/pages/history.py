@@ -30,7 +30,7 @@ def render_history_tab(prediction_state, app_toast):
                     )
                 with gr.Column(scale=2, elem_classes=["form-stack"]):
                     hist_stage = gr.Dropdown(
-                        choices=["全部阶段", "花期", "成熟期"],
+                        choices=["全部阶段", "花期"],
                         value="全部阶段",
                         **dropdown_cls("阶段", filterable=False),
                     )

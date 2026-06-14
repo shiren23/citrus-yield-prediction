@@ -66,10 +66,11 @@ def render_prediction_tab(prediction_state, app_toast):
                 )
                 field_label("果树棵数")
                 tree_count = gr.Number(value=1, minimum=1, step=1, **input_cls("field-input"))
-                field_label("生长阶段")
+                # 生长阶段选择暂时隐藏，默认使用花期预测
                 stage_choice = gr.Radio(
                     choices=STAGE_UI_OPTIONS,
                     value=STAGE_UI_OPTIONS[0],
+                    visible=False,
                     **input_cls("stage-choice"),
                 )
                 field_label("树冠可见占比")

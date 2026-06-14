@@ -49,8 +49,6 @@ def generate_comparative_trend(orchard_name: str, stage_filter: str, period: str
             stage_label = STAGE_DISPLAY.get(r.get("stage", ""), "")
             if stage_filter == "花期" and stage_label != "花期":
                 continue
-            if stage_filter == "成熟期" and stage_label != "成熟期":
-                continue
         if period == "近3个月" and (now - dt).days > 92:
             continue
         if period == "近6个月" and (now - dt).days > 183:
@@ -165,8 +163,6 @@ def get_filtered_detections(orchard_name: str, stage_filter: str, period: str) -
         stage_label = STAGE_DISPLAY.get(r.get("stage", ""), r.get("stage", ""))
         if stage_filter != "全部阶段":
             if stage_filter == "花期" and stage_label != "花期":
-                continue
-            if stage_filter == "成熟期" and stage_label != "成熟期":
                 continue
         if period == "近3个月" and (now - dt).days > 92:
             continue
