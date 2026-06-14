@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -18,11 +18,21 @@ venv/
 *.swp
 
 # Data & Models
-*.pt
+# 蹇界暐棰勮缁冨熀纭€妯″瀷锛堝彲浠巙ltralytics瀹樻柟涓嬭浇锛夛紝浣嗕笂浼犺嚜宸辫缁冪殑妯″瀷
+yolov8n.pt
+yolov8s.pt
+yolov8m.pt
 *.onnx
 *.engine
 data/*.db
 models/runs/
+
+# 璁粌鏁版嵁闆嗗拰楠岃瘉缁撴灉锛堝お澶ф垨涓存椂鏂囦欢锛?dataset_citdet/
+opensource_dataset/
+validation_results/
+
+# 鏃ュ織鍜屼复鏃舵枃浠?*.log
+roboflow_*.png
 
 # OS
 .DS_Store
@@ -30,3 +40,4 @@ Thumbs.db
 
 # Gradio
 gradio_cached_examples/
+yolo26n.pt

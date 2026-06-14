@@ -19,8 +19,48 @@ SAMPLE_DIR = os.path.join(BASE_DIR, "sample_data")
 DB_PATH = os.path.join(DATA_DIR, "citrus.db")
 
 # 模型权重路径（优先使用微调后的模型，否则回退到YOLOv8n预训练权重）
-CUSTOM_MODEL_PATH = os.path.join(MODEL_DIR, "best.pt")
+CUSTOM_MODEL_PATH = os.path.join(MODEL_DIR, "citdet_best.pt")
 DEFAULT_MODEL_PATH = os.path.join(MODEL_DIR, "yolov8n.pt")
+
+# 可用的检测模型配置（支持Web界面或CLI切换）
+AVAILABLE_MODELS = {
+    "通用预训练 (YOLOv8n)": {
+        "path": DEFAULT_MODEL_PATH,
+        "class_names": ["flower", "immature_fruit", "mature_fruit"],
+        "class_colors": {
+            "flower": (255, 192, 203),
+            "immature_fruit": (144, 238, 144),
+            "mature_fruit": (255, 165, 0),
+        },
+        "is_default": True,
+    },
+    "成熟果实检测 (CitDet微调)": {
+        "path": os.path.join(MODEL_DIR, "citdet_best.pt"),
+        "class_names": ["mature_fruit"],
+        "class_colors": {
+            "mature_fruit": (255, 165, 0),
+        },
+        "is_default": False,
+    },
+    "花朵检测 (Roboflow微调)": {
+        "path": os.path.join(MODEL_DIR, "flowers_best.pt"),
+        "class_names": ["flower"],
+        "class_colors": {
+            "flower": (255, 192, 203),
+        },
+        "is_default": False,
+    },
+}
+
+
+def get_model_config(model_name: str) -> dict:
+    """获取模型配置，若不存在则返回通用预训练模型配置"""
+    return AVAILABLE_MODELS.get(model_name, AVAILABLE_MODELS["通用预训练 (YOLOv8n)"])
+
+
+def get_available_models() -> List[str]:
+    """获取所有可用模型名称列表"""
+    return list(AVAILABLE_MODELS.keys())
 
 
 @dataclass

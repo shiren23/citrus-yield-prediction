@@ -19,7 +19,7 @@ except ImportError:
 
 from .config import (
     CUSTOM_MODEL_PATH, DEFAULT_MODEL_PATH,
-    MODEL_CLASS_NAMES, CLASS_COLORS,
+    MODEL_CLASS_NAMES, CLASS_NAMES, CLASS_COLORS,
     CONFIDENCE_THRESHOLD, CONFIDENCE_THRESHOLDS, IOU_THRESHOLD,
     FALLBACK_CONFIDENCE, FALLBACK_CLASS_THRESHOLDS,
     VIDEO_SAMPLE_INTERVAL, normalize_counts, get_model_class_names,
@@ -29,6 +29,20 @@ from .heuristic_detector import (
     color_ratios, classify_scene,
     detections_from_heuristic_boxes, detect_flowers_heuristic, HEURISTIC_CONFIDENCE,
 )
+
+# COCO 类别到柑橘类别的映射（当使用通用 YOLOv8n 模型时）
+COCO_TO_CITRUS = {
+    49: "mature_fruit",   # orange (橙子/柑橘)
+    47: "mature_fruit",   # apple -> 近似归为成熟果
+}
+
+
+def _is_default_model(path: str) -> bool:
+    """判断是否为未微调的通用预训练模型"""
+    if not path:
+        return True
+    base = os.path.basename(path)
+    return base.startswith("yolov8") and base.endswith(".pt") and "best" not in base.lower()
 
 
 def _prepare_image_array(image: Union[str, np.ndarray, Image.Image]) -> np.ndarray:
@@ -188,7 +202,8 @@ def _apply_scene_detection(
     return detections, raw, yolo_mode
 
 
-def _parse_yolo_result(result, class_names, thresholds, default_conf, img_shape=None):
+def _parse_yolo_result(result, class_names, thresholds, default_conf, img_shape=None,
+                          is_default_model: bool = False):
     detections = []
     raw_counts = {name: 0 for name in class_names}
     if result.boxes is None:
@@ -202,6 +217,11 @@ def _parse_yolo_result(result, class_names, thresholds, default_conf, img_shape=
     )
     for bbox, conf_val, cls_idx in zip(boxes, confs, classes):
         cls_name = class_names[int(cls_idx)] if int(cls_idx) < len(class_names) else "unknown"
+        # 如果是通用预训练模型，使用 COCO -> 柑橘映射
+        if is_default_model:
+            citrus_cls = COCO_TO_CITRUS.get(int(cls_idx))
+            if citrus_cls:
+                cls_name = citrus_cls
         bbox_list = bbox.tolist()
         if img_shape is not None and not _is_plausible_box(bbox_list, img_shape, cls_name, None):
             continue
@@ -217,16 +237,22 @@ def _parse_yolo_result(result, class_names, thresholds, default_conf, img_shape=
 class CitrusDetector:
     """柑橘花朵与果实检测器"""
 
-    def __init__(self, model_path: Optional[str] = None, device: str = "cpu"):
+    def __init__(self, model_path: Optional[str] = None, device: str = "cpu",
+                 class_names: Optional[List[str]] = None,
+                 class_colors: Optional[Dict[str, Tuple[int, int, int]]] = None):
         """
         初始化检测器
         Args:
             model_path: 自定义模型路径，None则自动选择
             device: 运行设备 cpu/cuda
+            class_names: 类别名称列表，None使用默认配置
+            class_colors: 类别颜色映射，None使用默认配置
         """
         self.device = device
         self.model = None
-        self.class_names = list(MODEL_CLASS_NAMES)
+        self.model_path = None
+        self.class_names = class_names or list(CLASS_NAMES)
+        self.class_colors = class_colors or dict(CLASS_COLORS)
         self._load_model(model_path)
 
     def _load_model(self, model_path: Optional[str] = None):
@@ -247,6 +273,7 @@ class CitrusDetector:
             print(f"[Detector] 本地模型未找到，将自动下载: {path}")
 
         print(f"[Detector] 加载模型: {path}")
+        self.model_path = path
         self.model = YOLO(path)
         if hasattr(self.model, "names") and self.model.names:
             self.class_names = get_model_class_names(self.model.names)
@@ -254,6 +281,36 @@ class CitrusDetector:
         # 将模型移动到指定设备
         if self.device != "cpu":
             self.model.to(self.device)
+
+    def reload_model(self, model_path: str,
+                     class_names: Optional[List[str]] = None,
+                     class_colors: Optional[Dict[str, Tuple[int, int, int]]] = None):
+        """
+        动态切换模型（释放旧模型，加载新模型）
+        Args:
+            model_path: 新模型路径
+            class_names: 新的类别名称列表
+            class_colors: 新的类别颜色映射
+        """
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"模型文件不存在: {model_path}")
+
+        if class_names is not None:
+            self.class_names = class_names
+        if class_colors is not None:
+            self.class_colors = class_colors
+
+        # 释放旧模型显存
+        if self.model is not None:
+            try:
+                import torch
+                del self.model
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+
+        print(f"[Detector] 切换模型: {model_path}")
+        self._load_model(model_path)
 
     def detect_image(self, image: Union[str, np.ndarray, Image.Image],
                      conf: float = CONFIDENCE_THRESHOLD,
@@ -286,7 +343,8 @@ class CitrusDetector:
         predict_conf = min(CONFIDENCE_THRESHOLD, min(CONFIDENCE_THRESHOLDS.values(), default=0.25))
         results = self.model.predict(img_array, conf=predict_conf, iou=iou, verbose=False)
         detections, raw_counts, boxes, confs, classes = _parse_yolo_result(
-            results[0], self.class_names, CONFIDENCE_THRESHOLDS, conf, img_array.shape
+            results[0], self.class_names, CONFIDENCE_THRESHOLDS, conf, img_array.shape,
+            is_default_model=_is_default_model(self.model_path)
         )
 
         # 第二遍：低置信度回退（域外图片/AI 图常见）
@@ -490,16 +548,28 @@ class CitrusDetector:
 _detector_instance: Optional[CitrusDetector] = None
 
 
-def get_detector(model_path: Optional[str] = None, device: str = "cpu") -> CitrusDetector:
+def get_detector(model_path: Optional[str] = None, device: str = "cpu",
+                   class_names: Optional[List[str]] = None,
+                   class_colors: Optional[Dict[str, Tuple[int, int, int]]] = None) -> CitrusDetector:
     """获取检测器单例"""
     global _detector_instance
     if _detector_instance is None:
-        _detector_instance = CitrusDetector(model_path=model_path, device=device)
+        _detector_instance = CitrusDetector(
+            model_path=model_path, device=device,
+            class_names=class_names, class_colors=class_colors
+        )
     return _detector_instance
 
 
-def reset_detector(model_path: Optional[str] = None, device: str = "cpu") -> CitrusDetector:
-    """重置并重新加载检测器（模型更新后调用）"""
+def reset_detector(model_path: Optional[str] = None, device: str = "cpu",
+                   class_names: Optional[List[str]] = None,
+                   class_colors: Optional[Dict[str, Tuple[int, int, int]]] = None) -> CitrusDetector:
+    """重置检测器单例"""
     global _detector_instance
-    _detector_instance = CitrusDetector(model_path=model_path, device=device)
+    if _detector_instance is not None:
+        del _detector_instance
+    _detector_instance = CitrusDetector(
+        model_path=model_path, device=device,
+        class_names=class_names, class_colors=class_colors
+    )
     return _detector_instance
