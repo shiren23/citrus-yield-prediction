@@ -12,10 +12,14 @@ from ui.constants import (
     STAGE_UI_OPTIONS,
 )
 from ui.handlers import *
+from ui.handlers.orchard_data import (
+    register_orchard_dropdown,
+    make_orchard_dropdown_update,
+)
 
 
 def render_prediction_tab(prediction_state, app_toast):
-    with gr.Tab("产量预测"):
+    with gr.Tab("产量预测") as predict_tab:
         with gr.Row(elem_classes=["row-compact", "layout-full"]):
             with gr.Column(scale=1, elem_classes=["app-card", "form-stack"]):
                 gr.HTML('<div class="card-title">图片/视频上传</div>')
@@ -59,18 +63,18 @@ def render_prediction_tab(prediction_state, app_toast):
 
             with gr.Column(scale=1, elem_classes=["app-card", "form-stack"]):
                 gr.HTML('<div class="card-title">预测参数设置</div>')
-                orchard_name = gr.Dropdown(
+                orchard_name = register_orchard_dropdown(gr.Dropdown(
                     choices=get_orchard_list(),
                     value=default_orchard_name(),
                     **dropdown_cls("所属果园", allow_custom_value=True),
-                )
+                ))
                 field_label("果树棵数")
                 tree_count = gr.Number(value=1, minimum=1, step=1, **input_cls("field-input"))
-                # 生长阶段选择暂时隐藏，默认使用花期预测
+                field_label("生长阶段")
                 stage_choice = gr.Radio(
                     choices=STAGE_UI_OPTIONS,
                     value=STAGE_UI_OPTIONS[0],
-                    visible=False,
+                    visible=True,
                     **input_cls("stage-choice"),
                 )
                 field_label("树冠可见占比")
@@ -172,3 +176,11 @@ def render_prediction_tab(prediction_state, app_toast):
         )
         # 导出单条记录为 CSV（handler 返回临时文件路径），输出绑定到 DownloadButton 本身
         export_btn.click(export_current_record, inputs=prediction_state, outputs=export_btn)
+
+        predict_tab.select(
+            lambda cur: make_orchard_dropdown_update(cur, default_orchard_name()),
+            inputs=[orchard_name],
+            outputs=[orchard_name],
+            queue=False,
+            show_progress="hidden",
+        )

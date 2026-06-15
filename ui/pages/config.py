@@ -12,12 +12,17 @@ from ui.constants import (
     STAGE_UI_OPTIONS,
 )
 from ui.handlers import *
+from ui.handlers.orchard_data import (
+    ORCHARD_DROPDOWNS,
+    refresh_all_orchard_dropdowns,
+    register_orchard_dropdown,
+)
 
 
 def render_config_tab(prediction_state, params, app_toast):
     with gr.Tab("系统设置"):
         with gr.Tabs():
-            with gr.Tab("实际产量录入"):
+            with gr.Tab("实际产量录入") as ayield_tab:
                 with gr.Column(elem_classes=["layout-full", "form-stack"]):
                     with gr.Column(elem_classes=["app-card", "form-stack", "config-panel"]):
                         record_option = gr.Dropdown(
@@ -32,11 +37,11 @@ def render_config_tab(prediction_state, params, app_toast):
                         gr.HTML('<p class="hint-text">选择后将自动填充果园、日期信息</p>')
                         auto_fill_block = gr.HTML(visible=False)
                         with gr.Column(visible=True, elem_classes=["form-stack"]) as manual_block:
-                            manual_orchard = gr.Dropdown(
+                            manual_orchard = register_orchard_dropdown(gr.Dropdown(
                                 choices=get_orchard_list(),
                                 value=default_orchard_name(),
                                 **dropdown_cls("所属果园", filterable=False),
-                            )
+                            ))
                             field_label("采收日期")
                             harvest_date = gr.Textbox(
                                 placeholder="YYYY-MM-DD",
@@ -86,7 +91,24 @@ def render_config_tab(prediction_state, params, app_toast):
                         show_progress="hidden",
                     )
 
-            with gr.Tab("果园信息管理"):
+                    def refresh_ayield_tab(current_orchard):
+                        choices = get_orchard_list()
+                        fallback = default_orchard_name()
+                        value = current_orchard if current_orchard in choices else fallback
+                        return (
+                            refresh_prediction_record_options(value, "manual"),
+                            gr.update(choices=choices, value=value),
+                        )
+
+                    ayield_tab.select(
+                        refresh_ayield_tab,
+                        inputs=[manual_orchard],
+                        outputs=[record_option, manual_orchard],
+                        queue=False,
+                        show_progress="hidden",
+                    )
+
+            with gr.Tab("果园信息管理") as orchard_mgmt_tab:
                 with gr.Column(elem_classes=["app-card", "form-stack"]):
                     gr.HTML('<div class="card-title">新增果园</div>')
                     with gr.Row(elem_classes=["row-compact"]):
@@ -167,6 +189,7 @@ def render_config_tab(prediction_state, params, app_toast):
                         orchard_list_html, orchard_select,
                         edit_orchard_name, edit_orchard_trees,
                         orchard_msg, new_orchard_name,
+                        *ORCHARD_DROPDOWNS,
                     ],
                     queue=False,
                 )
@@ -176,6 +199,7 @@ def render_config_tab(prediction_state, params, app_toast):
                     outputs=[
                         orchard_list_html, orchard_select,
                         edit_orchard_name, edit_orchard_trees, orchard_msg,
+                        *ORCHARD_DROPDOWNS,
                     ],
                     queue=False,
                 )
@@ -185,8 +209,21 @@ def render_config_tab(prediction_state, params, app_toast):
                     outputs=[
                         orchard_list_html, orchard_select,
                         edit_orchard_name, edit_orchard_trees, orchard_msg,
+                        *ORCHARD_DROPDOWNS,
                     ],
                     queue=False,
+                )
+
+                orchard_mgmt_tab.select(
+                    lambda current_id: orchard_ui_pack(selected_id=current_id),
+                    inputs=[orchard_select],
+                    outputs=[
+                        orchard_list_html, orchard_select,
+                        edit_orchard_name, edit_orchard_trees, orchard_msg,
+                        *ORCHARD_DROPDOWNS,
+                    ],
+                    queue=False,
+                    show_progress="hidden",
                 )
 
             with gr.Tab("预测参数配置"):

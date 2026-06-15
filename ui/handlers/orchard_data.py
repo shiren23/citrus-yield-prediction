@@ -83,9 +83,42 @@ def get_orchard_variety(name: str) -> str:
     return "通用柑橘"
 
 
+# Global registry for orchard dropdowns that need to stay in sync
+# when orchards are added/updated/deleted.
+ORCHARD_DROPDOWNS = []
+
+
+def register_orchard_dropdown(dropdown):
+    """Register a Gradio Dropdown so it can be refreshed across tabs."""
+    if dropdown not in ORCHARD_DROPDOWNS:
+        ORCHARD_DROPDOWNS.append(dropdown)
+    return dropdown
+
+
 def refresh_orchard_dropdown():
     choices = get_orchard_list()
     return gr.Dropdown(choices=choices, value=choices[0])
+
+
+def make_orchard_dropdown_update(current_value=None, fallback=None):
+    """Build a gr.update for an orchard dropdown, preserving value when possible."""
+    choices = get_orchard_list()
+    if current_value in choices:
+        return gr.update(choices=choices, value=current_value)
+    fallback = fallback if fallback in choices else default_orchard_name()
+    return gr.update(choices=choices, value=fallback)
+
+
+def refresh_all_orchard_dropdowns(*current_values):
+    """Return gr.update for every registered orchard dropdown.
+
+    Pass the current value of each registered dropdown as positional args.
+    """
+    updates = []
+    for i, dropdown in enumerate(ORCHARD_DROPDOWNS):
+        cur = current_values[i] if i < len(current_values) else None
+        updates.append(make_orchard_dropdown_update(cur))
+    return updates
 
 
 def format_risk_label(risk_level: str) -> str:

@@ -1,6 +1,6 @@
 # 柑橘产量预测系统 - 测试报告
 
-**测试时间**: 2026-06-15 01:41:07
+**测试时间**: 2026-06-15 12:21:41
 
 ## 一、单元测试
 
@@ -49,7 +49,7 @@
 | Detector | 视频检测 | ✅ PASS | sampled=3, avg_counts={'flower': 4.0, 'fruit': 0.0, 'immature_fruit': 0.0, 'mature_fruit': 0.0, 'total': 4.0} |
 | Integration | 端到端预测流程 | ✅ PASS | stage=flowering, yield=12.0kg, risk=warning |
 | Integration | 阶段分类性能(1000次) | ✅ PASS | 耗时=2.5ms |
-| Integration | 产量估算性能(1000次) | ✅ PASS | 耗时=3.3ms |
+| Integration | 产量估算性能(1000次) | ✅ PASS | 耗时=1.4ms |
 | App UI | 模块导入 | ✅ PASS | app.py 无语法错误 |
 | App UI | UI创建 | ✅ PASS | Gradio Blocks 创建成功 |
 | CLI | 模块导入 | ✅ PASS | cli.py 无语法错误 |
@@ -66,8 +66,8 @@
 
 | 指标 | 结果 |
 |------|------|
-| 阶段分类(1000次) | 2.48 ms |
-| 产量估算(1000次) | 3.33 ms |
+| 阶段分类(1000次) | 2.52 ms |
+| 产量估算(1000次) | 1.44 ms |
 | 端到端预测 | < 100 ms (不含模型推理) |
 
 ## 四、各模块覆盖率

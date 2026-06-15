@@ -16,7 +16,11 @@ from data.database import get_db
 
 from ui.charts import MATPLOTLIB_OK, MaxNLocator, mdates, plt, setup_matplotlib_chinese
 from ui.components import toast_payload
-from ui.handlers.orchard_data import save_system_params
+from ui.handlers.orchard_data import (
+    ORCHARD_DROPDOWNS,
+    default_orchard_name,
+    save_system_params,
+)
 from ui.constants import (
     DEFAULT_SYSTEM_PARAMS,
     MANUAL_RECORD_OPTION,
@@ -73,12 +77,25 @@ def build_orchard_table_html() -> str:
 def orchard_ui_pack(selected_id=None, msg="", ok=False):
     choices = get_orchard_dropdown_choices()
     html = build_orchard_table_html()
+    cls = "success-text" if ok else "fail-text"
+    msg_html = gr.update(
+        value=f'<p class="{cls}">{msg}</p>' if msg else "",
+        visible=bool(msg),
+    )
+
+    # Always refresh the other registered orchard dropdowns so that
+    # prediction/history/config filters stay in sync.
+    dropdown_updates = []
+    for dropdown in ORCHARD_DROPDOWNS:
+        dropdown_updates.append(gr.update(choices=get_orchard_list(), value=default_orchard_name()))
+
     if not choices:
         return (
             html,
             gr.update(choices=[], value=None),
             "", 100,
-            gr.update(value=f'<p class="fail-text">{msg}</p>' if msg else "", visible=bool(msg)),
+            msg_html,
+            *dropdown_updates,
         )
     if selected_id is None:
         selected_id = choices[0][1]
@@ -86,17 +103,13 @@ def orchard_ui_pack(selected_id=None, msg="", ok=False):
     if orchard is None:
         selected_id = choices[0][1]
         orchard = get_db().get_orchard(int(selected_id))
-    cls = "success-text" if ok else "fail-text"
-    msg_html = gr.update(
-        value=f'<p class="{cls}">{msg}</p>' if msg else "",
-        visible=bool(msg),
-    )
     return (
         html,
         gr.update(choices=choices, value=selected_id),
         orchard["name"],
         orchard.get("tree_count", 1),
         msg_html,
+        *dropdown_updates,
     )
 
 

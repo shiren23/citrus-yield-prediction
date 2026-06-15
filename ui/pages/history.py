@@ -13,24 +13,28 @@ from ui.constants import (
     STAGE_UI_OPTIONS,
 )
 from ui.handlers import *
+from ui.handlers.orchard_data import (
+    register_orchard_dropdown,
+    make_orchard_dropdown_update,
+)
 
 
 def render_history_tab(prediction_state, app_toast):
     _init = initial_history_view()
 
-    with gr.Tab("历史数据"):
+    with gr.Tab("历史数据") as history_tab:
         with gr.Column(elem_classes=["app-card", "form-stack"]):
             gr.HTML('<div class="card-title">筛选条件</div>')
             with gr.Row(elem_classes=["history-filter-bar", "layout-full"], equal_height=True):
                 with gr.Column(scale=3, elem_classes=["form-stack"]):
-                    hist_orchard = gr.Dropdown(
+                    hist_orchard = register_orchard_dropdown(gr.Dropdown(
                         choices=get_orchard_list(),
                         value=default_orchard_name(),
                         **dropdown_cls("果园", filterable=False),
-                    )
+                    ))
                 with gr.Column(scale=2, elem_classes=["form-stack"]):
                     hist_stage = gr.Dropdown(
-                        choices=["全部阶段", "花期"],
+                        choices=["全部阶段", "花期", "成熟期"],
                         value="全部阶段",
                         **dropdown_cls("阶段", filterable=False),
                     )
@@ -145,5 +149,13 @@ def render_history_tab(prediction_state, app_toast):
                 inputs=[delete_record_id, hist_orchard, hist_stage, hist_period],
                 outputs=hist_delete_outputs,
                 js=HIST_DELETE_PREPROCESS_JS,
+                show_progress="hidden",
+            )
+
+            history_tab.select(
+                lambda cur: make_orchard_dropdown_update(cur, default_orchard_name()),
+                inputs=[hist_orchard],
+                outputs=[hist_orchard],
+                queue=False,
                 show_progress="hidden",
             )
