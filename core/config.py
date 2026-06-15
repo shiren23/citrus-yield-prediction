@@ -50,6 +50,14 @@ AVAILABLE_MODELS = {
         },
         "is_default": False,
     },
+    "花朵检测-增强版（过拟合）": {
+        "path": os.path.join(MODEL_DIR, "flowers_overfit.pt"),
+        "class_names": ["flower"],
+        "class_colors": {
+            "flower": (255, 192, 203),
+        },
+        "is_default": False,
+    },
 }
 
 

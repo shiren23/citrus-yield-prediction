@@ -25,7 +25,7 @@ from ui.constants import (
     STAGE_UI_MAP,
     SYSTEM_PARAMS_PATH,
 )
-from ui.detector_state import ensure_detector
+from ui.detector_state import set_detector_model
 from ui.handlers.orchard_data import (
     apply_system_params_to_estimator,
     get_orchard_id,
@@ -161,13 +161,13 @@ def _prediction_fail(toast_msg: str, ok: bool = False):
     )
 
 
-def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ratio_pct):
+def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ratio_pct, model_name):
     keep_panel = gr.update(visible=True)
     path = media_path if media_path and os.path.isfile(str(media_path)) else None
     if not path or not os.path.isfile(path):
         return _prediction_fail("请先上传图片或视频", False)
 
-    dt = ensure_detector()
+    dt = set_detector_model(model_name)
     if dt is None:
         return _prediction_fail("模型加载失败，请检查依赖安装", False)
 
@@ -500,6 +500,17 @@ def save_record_full(state_json: str):
         else:
             gr.Warning(str(msg), duration=3, title="")
     return state, toast_output(str(msg), bool(ok)), status_html(str(msg), bool(ok))
+
+
+def on_model_change(model_name: str):
+    """切换检测模型，返回状态提示。"""
+    try:
+        dt = set_detector_model(model_name)
+        if dt is None:
+            return status_html(f"模型加载失败：{model_name}", False)
+        return status_html(f"已切换模型：{model_name}", True)
+    except Exception as e:
+        return status_html(f"切换模型失败：{e}", False)
 
 
 def toast_from_meta(meta):

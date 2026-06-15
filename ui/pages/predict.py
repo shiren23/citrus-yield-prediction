@@ -11,6 +11,7 @@ from ui.constants import (
     MEDIA_PREVIEW_PLACEHOLDER,
     STAGE_UI_OPTIONS,
 )
+from core.config import get_available_models
 from ui.handlers import *
 from ui.handlers.orchard_data import (
     register_orchard_dropdown,
@@ -63,6 +64,13 @@ def render_prediction_tab(prediction_state, app_toast, history_tab=None):
 
             with gr.Column(scale=1, elem_classes=["app-card", "form-stack"]):
                 gr.HTML('<div class="card-title">预测参数设置</div>')
+                field_label("检测模型")
+                model_select = gr.Dropdown(
+                    choices=get_available_models(),
+                    value=get_available_models()[0],
+                    **dropdown_cls("检测模型", filterable=False),
+                )
+                model_status = gr.HTML("")
                 orchard_name = register_orchard_dropdown(gr.Dropdown(
                     choices=get_orchard_list(),
                     value=default_orchard_name(),
@@ -156,6 +164,14 @@ def render_prediction_tab(prediction_state, app_toast, history_tab=None):
             result_info, yield_value, yield_formula, calc_steps, yield_range,
             risk_block, prediction_state, app_toast,
         ]
+        model_select.change(
+            on_model_change,
+            inputs=[model_select],
+            outputs=[model_status],
+            queue=False,
+            show_progress="hidden",
+        )
+
         predict_btn.click(
             show_predict_result_panel,
             outputs=[result_block],
@@ -163,7 +179,7 @@ def render_prediction_tab(prediction_state, app_toast, history_tab=None):
             show_progress="hidden",
         ).then(
             run_prediction,
-            inputs=[media_path_state, orchard_name, tree_count, stage_choice, canopy_ratio_pct],
+            inputs=[media_path_state, orchard_name, tree_count, stage_choice, canopy_ratio_pct, model_select],
             outputs=predict_outputs,
             show_progress="full",
             show_progress_on=annotated_output,
