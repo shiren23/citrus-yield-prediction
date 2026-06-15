@@ -18,7 +18,7 @@ from ui.handlers.orchard_data import (
 )
 
 
-def render_prediction_tab(prediction_state, app_toast):
+def render_prediction_tab(prediction_state, app_toast, history_tab=None):
     with gr.Tab("产量预测") as predict_tab:
         with gr.Row(elem_classes=["row-compact", "layout-full"]):
             with gr.Column(scale=1, elem_classes=["app-card", "form-stack"]):
@@ -172,6 +172,13 @@ def render_prediction_tab(prediction_state, app_toast):
             save_record_full,
             inputs=prediction_state,
             outputs=[prediction_state, app_toast, save_status],
+            show_progress="hidden",
+        ).then(
+            # After saving, refresh the history tab so the new record appears immediately.
+            apply_history_filters,
+            inputs=getattr(history_tab, "_citrus_filter_inputs", None) or [],
+            outputs=getattr(history_tab, "_citrus_query_outputs", None) or [],
+            queue=False,
             show_progress="hidden",
         )
         # 导出单条记录为 CSV（handler 返回临时文件路径），输出绑定到 DownloadButton 本身

@@ -23,6 +23,10 @@ def render_history_tab(prediction_state, app_toast):
     _init = initial_history_view()
 
     with gr.Tab("历史数据") as history_tab:
+        # Expose these for cross-tab refresh (e.g. after saving a prediction)
+        history_tab._citrus_filter_inputs = None
+        history_tab._citrus_query_outputs = None
+        history_tab._citrus_orchard_dropdown = None
         with gr.Column(elem_classes=["app-card", "form-stack"]):
             gr.HTML('<div class="card-title">筛选条件</div>')
             with gr.Row(elem_classes=["history-filter-bar", "layout-full"], equal_height=True):
@@ -62,42 +66,6 @@ def render_history_tab(prediction_state, app_toast):
             gr.HTML('<p class="hint-text">点击表格每行右侧「删除」可移除该条记录。</p>')
             # 记录详情区（点击查看按钮时显示）
             details_html = gr.HTML(visible=False)
-            # 注入一个小的全局函数，确保在页面上下文中可用（防止 APP_JS 未注入或被阻断）
-            gr.HTML(r"""
-            <script>
-            (function(){
-                if (window.triggerHistDelete && typeof window.triggerHistDelete === 'function') return;
-                function queryAll(selector){
-                    const found=[];
-                    function visit(root){
-                        if(!root) return;
-                        try{ root.querySelectorAll(selector).forEach(function(el){ found.push(el); }); }catch(e){}
-                        root.querySelectorAll('*').forEach(function(el){ if(el.shadowRoot) visit(el.shadowRoot); });
-                    }
-                    visit(document);
-                    const app = document.querySelector('gradio-app');
-                    if (app && app.shadowRoot) visit(app.shadowRoot);
-                    return found;
-                }
-                window.triggerHistDelete = function(id){
-                    const inputs = queryAll('.hist-delete-id-input textarea, #hist_delete_id textarea');
-                    const submits = queryAll('.hist-delete-submit button, #hist_delete_submit button');
-                    const input = inputs && inputs[0];
-                    const submit = submits && submits[0];
-                    if(!input || !submit) {
-                        // fallback: try direct elements
-                        const directInput = document.querySelector('#hist_delete_id textarea');
-                        const directSubmit = document.querySelector('#hist_delete_submit button');
-                        if(directInput && directSubmit){ directInput.value = String(id); directInput.dispatchEvent(new Event('input',{bubbles:true})); directSubmit.click(); }
-                        return;
-                    }
-                    input.value = String(id);
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    submit.click();
-                };
-            })();
-            </script>
-            """)
             batch_export_btn = gr.DownloadButton("批量导出", variant="secondary")
             stats_html = gr.HTML(_init[3])
             history_table_html = gr.HTML(_init[4])
@@ -121,6 +89,9 @@ def render_history_tab(prediction_state, app_toast):
             hist_query_outputs = [
                 trend_title, trend_output, hist_filter_summary, stats_html, history_table_html,
             ]
+            history_tab._citrus_filter_inputs = hist_filter_inputs
+            history_tab._citrus_query_outputs = hist_query_outputs
+            history_tab._citrus_orchard_dropdown = hist_orchard
             hist_delete_outputs = hist_query_outputs + [app_toast, hist_delete_status]
 
             hist_query_btn.click(
@@ -159,3 +130,5 @@ def render_history_tab(prediction_state, app_toast):
                 queue=False,
                 show_progress="hidden",
             )
+
+    return history_tab

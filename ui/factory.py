@@ -32,9 +32,10 @@ def create_ui():
         prediction_state = gr.State("")
         app_toast = toast_overlay()
 
-        render_prediction_tab(prediction_state, app_toast)
-        render_history_tab(prediction_state, app_toast)
-        render_config_tab(prediction_state, params, app_toast)
+        # Render history first so prediction tab can refresh it after saving.
+        history_tab = render_history_tab(prediction_state, app_toast)
+        render_prediction_tab(prediction_state, app_toast, history_tab)
+        render_config_tab(demo, prediction_state, params, app_toast)
         render_about_tab(prediction_state)
 
     return demo

@@ -297,30 +297,7 @@ def build_history_table_html(orchard_name: str, stage_filter: str, period: str) 
     rows = []
     for r in records:
         risk_cls = "risk-warning" if r["risk_label"] == "低产预警" else "risk-normal"
-        # Inline JS traverses shadow roots to find the hidden delete input and submit button,
-        # then sets the id and triggers the submit. This avoids relying on global functions
-        # that may not be available in all contexts.
-        # Build an onclick script that is safe to embed in a single-quoted HTML attribute.
-        onclick_js = (
-            '(function(id){'
-            'function queryAll(selector){const found=[];function visit(root){if(!root) return;try{root.querySelectorAll(selector).forEach(function(el){found.push(el);});}catch(e){};root.querySelectorAll("*").forEach(function(el){if(el.shadowRoot) visit(el.shadowRoot);});};visit(document);var app=document.querySelector("gradio-app");if(app && app.shadowRoot) visit(app.shadowRoot);return found;}'
-            'var inputs=queryAll("[id$=\"hist_delete_id\"]");var submits=queryAll("[id$=\"hist_delete_submit\"]");if(inputs.length && submits.length){inputs[0].value=String(id);inputs[0].dispatchEvent(new Event("input",{bubbles:true}));submits[0].click();} })(%s); return false;'
-        ) % (r['id'])
-        # More robust inline onclick script: try multiple selectors and fallbacks,
-        # avoid double quotes so it can be embedded in a double-quoted attribute.
-        onclick_js = (
-            '(function(){'
-            f'var id={r["id"]};'
-            "function visitRoots(root, fn){ if(!root) return; try{ fn(root); }catch(e){}; try{ root.querySelectorAll('*').forEach(function(el){ if(el.shadowRoot) visitRoots(el.shadowRoot, fn); }); }catch(e){} }"
-            "function findOne(selectors){ for(var i=0;i<selectors.length;i++){ try{ var s=selectors[i]; var els=document.querySelectorAll(s); if(els && els.length) return els[0]; }catch(e){} } return null; }"
-            "var inputSelectors=['#hist_delete_id textarea','.hist-delete-id-input textarea','#hist_delete_id input','.hist-delete-id-input input','#hist_delete_id','.hist-delete-id-input'];"
-            "var submitSelectors=['#hist_delete_submit','.hist-delete-submit','#hist_delete_submit button','.hist-delete-submit button'];"
-            "var input=findOne(inputSelectors); if(!input){ /* try searching shadow roots */ var found=null; visitRoots(document,function(root){ if(found) return; for(var i=0;i<inputSelectors.length;i++){ try{ var els=root.querySelectorAll(inputSelectors[i]); if(els && els.length){ found=els[0]; break; } }catch(e){} } }); if(found) input=found; }"
-            "var submit=findOne(submitSelectors); if(!submit){ var found2=null; visitRoots(document,function(root){ if(found2) return; for(var i=0;i<submitSelectors.length;i++){ try{ var els=root.querySelectorAll(submitSelectors[i]); if(els && els.length){ found2=els[0]; break; } }catch(e){} } }); if(found2) submit=found2; }"
-            "if(input && submit){ try{ if('value' in input) input.value=String(id); else { var ta=input.querySelector && input.querySelector('textarea, input'); if(ta) ta.value=String(id); } if(input.dispatchEvent) input.dispatchEvent(new Event('input',{bubbles:true})); submit.click(); }catch(e){} } })(); return false;"
-        )
-
-        # compute actual / error if available
+        # Deletion is handled by the global APP_JS click listener on [data-hist-delete].
         h = hist_map.get(r.get('id'))
         actual_val = ''
         err_rate = ''
@@ -348,7 +325,7 @@ def build_history_table_html(orchard_name: str, stage_filter: str, period: str) 
             f"<td>{err_rate}</td>"
             f"<td>{accurate}</td>"
             f"<td class='{risk_cls}'>{r['risk_label']}</td>"
-            f"<td><button type=\"button\" class=\"hist-del-btn\" data-hist-delete=\"{r['id']}\" onclick=\"{onclick_js}\">删除</button></td>"
+            f'<td><button type="button" class="hist-del-btn" data-hist-delete="{r["id"]}">删除</button></td>'
             f"</tr>"
         )
 

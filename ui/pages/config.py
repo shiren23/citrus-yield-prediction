@@ -19,7 +19,7 @@ from ui.handlers.orchard_data import (
 )
 
 
-def render_config_tab(prediction_state, params, app_toast):
+def render_config_tab(demo, prediction_state, params, app_toast):
     with gr.Tab("系统设置"):
         with gr.Tabs():
             with gr.Tab("实际产量录入") as ayield_tab:
@@ -225,6 +225,21 @@ def render_config_tab(prediction_state, params, app_toast):
                     queue=False,
                     show_progress="hidden",
                 )
+
+                # Refresh orchard management when the app finishes loading to work
+                # around Gradio not rendering HTML inside initially-inactive nested tabs.
+                if demo is not None:
+                    demo.load(
+                        lambda current_id: orchard_ui_pack(selected_id=current_id),
+                        inputs=[orchard_select],
+                        outputs=[
+                            orchard_list_html, orchard_select,
+                            edit_orchard_name, edit_orchard_trees, orchard_msg,
+                            *ORCHARD_DROPDOWNS,
+                        ],
+                        queue=False,
+                        show_progress="hidden",
+                    )
 
             with gr.Tab("预测参数配置"):
                 with gr.Column(elem_classes=["layout-full", "form-stack"]):

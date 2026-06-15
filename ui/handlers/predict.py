@@ -218,6 +218,8 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
         )
         tree_counts = scale_info["scaled"]
         tree_counts["total"] = tree_counts.get("total", 0)
+        raw_counts = scale_info["raw"]
+        used_canopy_ratio = scale_info.get("canopy_ratio", ratio)
 
         estimator = YieldEstimator(variety)
         apply_system_params_to_estimator(estimator, params)
@@ -282,6 +284,7 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
         factors = yield_result.get("factors", {}) or {}
         try:
             if stage == "flowering":
+                raw_flower = int(raw_counts.get("flower", 0))
                 flower_cnt = int(factors.get("flower_count", flower_total))
                 rate = float(factors.get("flower_fruit_rate", 0))
                 expected_fruits = round(flower_cnt * rate, 2)
@@ -289,7 +292,9 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
                 avg_w_g = int(round(avg_w_kg * 1000))
                 calc_html = f"""
                 <div class="calc-card">
-                  <div class="info-row"><strong>检测到花朵：</strong>{flower_cnt} 朵</div>
+                  <div class="info-row"><strong>图片检测到花朵：</strong>{raw_flower} 朵</div>
+                  <div class="info-row"><strong>树冠可见占比：</strong>{used_canopy_ratio*100:.0f}%</div>
+                  <div class="info-row"><strong>整树估算花朵：</strong>{flower_cnt} 朵</div>
                   <div class="info-row"><strong>使用坐果率：</strong>{rate:.3f} ({rate*100:.2f}%)</div>
                   <div class="info-row"><strong>预计果实数：</strong>{flower_cnt} × {rate} = {expected_fruits} 个</div>
                   <div class="info-row"><strong>平均单果重量：</strong>{avg_w_g} g</div>
@@ -298,6 +303,7 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
                 </div>
                 """
             elif stage == "immature":
+                raw_imm = int(raw_counts.get("immature_fruit", 0))
                 imm_cnt = int(factors.get("immature_count", counts.get("immature_fruit", 0)))
                 surv = float(factors.get("survival_rate", 0))
                 expected_fruits = round(imm_cnt * surv, 2)
@@ -305,7 +311,9 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
                 avg_w_g = int(round(avg_w_kg * 1000))
                 calc_html = f"""
                 <div class="calc-card">
-                  <div class="info-row"><strong>检测到幼果：</strong>{imm_cnt} 个</div>
+                  <div class="info-row"><strong>图片检测到幼果：</strong>{raw_imm} 个</div>
+                  <div class="info-row"><strong>树冠可见占比：</strong>{used_canopy_ratio*100:.0f}%</div>
+                  <div class="info-row"><strong>整树估算幼果：</strong>{imm_cnt} 个</div>
                   <div class="info-row"><strong>使用成活率：</strong>{surv:.3f} ({surv*100:.2f}%)</div>
                   <div class="info-row"><strong>预计成活果数：</strong>{imm_cnt} × {surv} = {expected_fruits} 个</div>
                   <div class="info-row"><strong>平均单果重量：</strong>{avg_w_g} g</div>
@@ -313,6 +321,7 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
                 </div>
                 """
             elif stage == "mature":
+                raw_fruit = int(get_fruit_count(raw_counts))
                 fruit_cnt = int(factors.get("fruit_count", fruit_total))
                 avg_w_kg = float(factors.get("avg_weight_kg", 0))
                 drop = float(factors.get("mature_drop_rate", 0))
@@ -320,7 +329,9 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
                 avg_w_g = int(round(avg_w_kg * 1000))
                 calc_html = f"""
                 <div class="calc-card">
-                  <div class="info-row"><strong>检测到果实：</strong>{fruit_cnt} 个</div>
+                  <div class="info-row"><strong>图片检测到果实：</strong>{raw_fruit} 个</div>
+                  <div class="info-row"><strong>树冠可见占比：</strong>{used_canopy_ratio*100:.0f}%</div>
+                  <div class="info-row"><strong>整树估算果实：</strong>{fruit_cnt} 个</div>
                   <div class="info-row"><strong>预计留果数：</strong>{fruit_cnt} × (1 - {drop}) = {harvested} 个</div>
                   <div class="info-row"><strong>平均单果重量：</strong>{avg_w_g} g</div>
                   <div class="info-row"><strong>最终预测产量：</strong>{total_kg} kg（{int(tree_count or 1)} 棵）</div>
@@ -364,6 +375,8 @@ def run_prediction(media_path, orchard_name, tree_count, stage_choice, canopy_ra
             "saved": False,
             "orchard_id": orchard_id,
             "counts": tree_counts,
+            "raw_counts": raw_counts,
+            "canopy_ratio": used_canopy_ratio,
             "stage": stage_info["stage"],
             "predicted_yield": yield_result["predicted_yield_kg"],
             "confidence": yield_result["confidence"],
