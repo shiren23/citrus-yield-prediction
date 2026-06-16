@@ -87,9 +87,9 @@ def render_prediction_tab(prediction_state, app_toast, history_tab=None):
                 )
                 field_label("树冠可见占比")
                 canopy_ratio_pct = gr.Number(
-                    value=12, minimum=5, maximum=40, step=1, **input_cls("field-input"),
+                    value=12, minimum=5, maximum=100, step=1, **input_cls("field-input"),
                 )
-                gr.HTML('<p class="hint-text">图片可见树冠比例，用于整树数量换算</p>')
+                gr.HTML('<p class="hint-text">图片可见树冠比例，用于整树数量换算；成熟期可设为 100%</p>')
                 with gr.Row(elem_classes=["btn-full"]):
                     predict_btn = gr.Button("开始预测", variant="primary")
 

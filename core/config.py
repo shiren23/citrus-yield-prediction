@@ -42,6 +42,14 @@ AVAILABLE_MODELS = {
         },
         "is_default": False,
     },
+    "成熟果实检测-增强版 (train+test)": {
+        "path": os.path.join(MODEL_DIR, "citdet_overfit.pt"),
+        "class_names": ["mature_fruit"],
+        "class_colors": {
+            "mature_fruit": (255, 165, 0),
+        },
+        "is_default": False,
+    },
     "花朵检测 (Roboflow微调)": {
         "path": os.path.join(MODEL_DIR, "flowers_best.pt"),
         "class_names": ["flower"],
