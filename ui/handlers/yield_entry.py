@@ -107,14 +107,12 @@ def on_prediction_record_select(option: str):
                 gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=""),
-                gr.update(value=""),
             )
         det_id = parse_prediction_option(option)
         if det_id is None:
             return (
                 gr.update(visible=False),
                 gr.update(visible=True),
-                gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=""),
@@ -136,7 +134,6 @@ def on_prediction_record_select(option: str):
         return (
             gr.update(visible=True, value=fill_html),
             gr.update(visible=False),
-            gr.update(value=orchard_name),
             gr.update(value=date_str),
             gr.update(value=stage),
             gr.update(value=str(predicted)),
@@ -147,7 +144,6 @@ def on_prediction_record_select(option: str):
         return (
             gr.update(visible=False, value="<p class='hint-text'>自动填充失败，请稍后重试或选择手动录入</p>"),
             gr.update(visible=True),
-            gr.update(value=""),
             gr.update(value=""),
             gr.update(value=""),
             gr.update(value=""),

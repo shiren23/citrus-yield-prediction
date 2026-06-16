@@ -23,90 +23,7 @@ def render_config_tab(demo, prediction_state, params, app_toast):
     with gr.Tab("系统设置"):
         with gr.Tabs():
             with gr.Tab("实际产量录入") as ayield_tab:
-                with gr.Column(elem_classes=["layout-full", "form-stack"]):
-                    with gr.Column(elem_classes=["app-card", "form-stack", "config-panel"]):
-                        record_option = gr.Dropdown(
-                            choices=get_prediction_options(default_orchard_name()),
-                            value="manual",
-                            label="关联历史预测记录",
-                            show_label=True,
-                            container=True,
-                            filterable=False,
-                            elem_classes=["dropdown-field", "record-select"],
-                        )
-                        gr.HTML('<p class="hint-text">选择后将自动填充果园、日期信息</p>')
-                        auto_fill_block = gr.HTML(visible=False)
-                        with gr.Column(visible=True, elem_classes=["form-stack"]) as manual_block:
-                            manual_orchard = register_orchard_dropdown(gr.Dropdown(
-                                choices=get_orchard_list(),
-                                value=default_orchard_name(),
-                                **dropdown_cls("所属果园", filterable=False),
-                            ))
-                            field_label("采收日期")
-                            harvest_date = gr.Textbox(
-                                placeholder="YYYY-MM-DD",
-                                value=datetime.now().strftime("%Y-%m-%d"),
-                                **input_cls("field-input"),
-                            )
-                        field_label("果园实际采收总产量（kg）")
-                        total_yield_input = gr.Number(minimum=0, step=0.1, **input_cls("field-input"))
-                        gr.HTML("""
-                        <p class="hint-text">填写整园总产量即可，无需逐棵统计；系统会按果园棵数自动换算单棵均值。</p>
-                        <div class="error-calc-block">
-                            提交后将根据关联预测记录计算预测值与实际值的相对误差；
-                            若无关联记录，仅保存实际产量数据供后续分析。
-                        </div>
-                        """)
-                        with gr.Row(elem_classes=["btn-full"]):
-                            ay_submit_btn = gr.Button("提交保存", variant="primary")
-                        # 输入在提交时统一验证，避免在用户输入阶段修改显示格式
-                        ay_result = gr.HTML("")
-                        ay_status = gr.HTML("")
-                        # These hidden fields must be rendered into the DOM so JS/Python bindings
-                        # can read/write them. We hide them via CSS instead of using visible=False
-                        hidden_predicted = gr.Textbox(visible=True, container=False, elem_classes=["hist-hidden"])
-                        hidden_stage = gr.Textbox(visible=True, container=False, elem_classes=["hist-hidden"])
-
-                    record_option.change(
-                        on_prediction_record_select,
-                        inputs=record_option,
-                        outputs=[
-                            auto_fill_block, manual_block,
-                            manual_orchard, harvest_date,
-                            hidden_stage, hidden_predicted,
-                        ],
-                        show_progress="hidden",
-                    )
-                    manual_orchard.change(
-                        refresh_prediction_record_options,
-                        inputs=[manual_orchard, record_option],
-                        outputs=[record_option],
-                        queue=False,
-                        show_progress="hidden",
-                    )
-                    ay_submit_btn.click(
-                        submit_actual_yield,
-                        inputs=[record_option, manual_orchard, harvest_date, total_yield_input, hidden_predicted],
-                        outputs=[ay_result, app_toast],
-                        show_progress="hidden",
-                    )
-
-                    def refresh_ayield_tab(current_orchard):
-                        choices = get_orchard_list()
-                        fallback = default_orchard_name()
-                        value = current_orchard if current_orchard in choices else fallback
-                        return (
-                            refresh_prediction_record_options(value, "manual"),
-                            gr.update(choices=choices, value=value),
-                        )
-
-                    ayield_tab.select(
-                        refresh_ayield_tab,
-                        inputs=[manual_orchard],
-                        outputs=[record_option, manual_orchard],
-                        queue=False,
-                        show_progress="hidden",
-                    )
+                gr.Markdown("实际产量录入 placeholder")
 
             with gr.Tab("果园信息管理") as orchard_mgmt_tab:
                 with gr.Column(elem_classes=["app-card", "form-stack"]):
@@ -214,32 +131,6 @@ def render_config_tab(demo, prediction_state, params, app_toast):
                     queue=False,
                 )
 
-                orchard_mgmt_tab.select(
-                    lambda current_id: orchard_ui_pack(selected_id=current_id),
-                    inputs=[orchard_select],
-                    outputs=[
-                        orchard_list_html, orchard_select,
-                        edit_orchard_name, edit_orchard_trees, orchard_msg,
-                        *ORCHARD_DROPDOWNS,
-                    ],
-                    queue=False,
-                    show_progress="hidden",
-                )
-
-                # Refresh orchard management when the app finishes loading to work
-                # around Gradio not rendering HTML inside initially-inactive nested tabs.
-                if demo is not None:
-                    demo.load(
-                        lambda current_id: orchard_ui_pack(selected_id=current_id),
-                        inputs=[orchard_select],
-                        outputs=[
-                            orchard_list_html, orchard_select,
-                            edit_orchard_name, edit_orchard_trees, orchard_msg,
-                            *ORCHARD_DROPDOWNS,
-                        ],
-                        queue=False,
-                        show_progress="hidden",
-                    )
 
             with gr.Tab("预测参数配置"):
                 with gr.Column(elem_classes=["layout-full", "form-stack"]):

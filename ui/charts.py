@@ -9,7 +9,7 @@ try:
 
     def setup_matplotlib_chinese():
         plt.rcParams["font.sans-serif"] = [
-            "Microsoft YaHei", "SimHei", "PingFang SC", "Noto Sans CJK SC", "sans-serif",
+            "Microsoft YaHei", "SimHei", "SimSun", "PingFang SC", "Noto Sans CJK SC", "sans-serif",
         ]
         plt.rcParams["axes.unicode_minus"] = False
 except ImportError:

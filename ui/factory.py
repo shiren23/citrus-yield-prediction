@@ -6,6 +6,7 @@ try:
 except ImportError:
     gr = None
 
+from ui.charts import setup_matplotlib_chinese
 from ui.client_js import APP_JS
 from ui.components import GLOBAL_CSS, build_theme, toast_overlay
 from ui.handlers import load_system_params, save_system_params
@@ -18,6 +19,8 @@ from ui.pages.predict import render_prediction_tab
 def create_ui():
     if gr is None:
         raise RuntimeError("Gradio 未安装")
+
+    setup_matplotlib_chinese()
 
     params = load_system_params()
     save_system_params(params)
