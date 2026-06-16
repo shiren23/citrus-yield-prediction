@@ -1,0 +1,11 @@
+# CiDet Dataset Configuration
+
+train: ./train/images      # Path to training images
+val: ./val/images          # Path to validation images
+test: ./test/images        # Path to test images
+
+nc: 2                      # Number of classes
+
+names:                     # Class names
+  0: fruit_on_tree
+  1: fruit_on_ground

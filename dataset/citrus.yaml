@@ -1,0 +1,6 @@
+path: E:/projects/citrus-yield-prediction/dataset
+train: images/train
+val: images/val
+nc: 2
+names: ['flower', 'fruit']
+http://localhost:7860/
