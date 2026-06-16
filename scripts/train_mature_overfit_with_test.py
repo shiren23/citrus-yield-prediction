@@ -195,8 +195,23 @@ def backup_model(model_path: Path):
 
 
 def find_best_weight(runs_dir: Path):
+    """查找训练生成的 best.pt，兼容 Ultralytics 自动添加 -2/-3 后缀的情况。"""
+    # 优先精确匹配目标目录
     candidates = sorted(runs_dir.rglob("weights/best.pt"), key=lambda p: p.stat().st_mtime, reverse=True)
-    return candidates[0] if candidates else None
+    if candidates:
+        return candidates[0]
+
+    # 若目标目录被重命名（如 mature_overfit_test-2），在同级目录中按名称匹配最新目录
+    if runs_dir.parent.exists():
+        pattern = runs_dir.name + "*"
+        sibling_candidates = sorted(
+            runs_dir.parent.rglob(pattern + "/weights/best.pt"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if sibling_candidates:
+            return sibling_candidates[0]
+    return None
 
 
 def train_mature_overfit(
