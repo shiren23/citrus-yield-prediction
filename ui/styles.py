@@ -726,6 +726,29 @@ button[role="tab"][aria-selected="true"] {
 }
 
 .detection-stats { font-size: 14px; color: #334155; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+
+/* 预测结果标注图：强制按原图比例缩放，避免框与图错位 */
+.predict-result-image,
+.predict-result-image .block,
+.predict-result-image .wrap,
+.predict-result-image .image-container,
+.predict-result-image .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 420px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+}
+.predict-result-image img {
+    max-width: 100% !important;
+    max-height: 420px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
 .history-delete-bar {
     margin-top: 12px;
     align-items: flex-end !important;
